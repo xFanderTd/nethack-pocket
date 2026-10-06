@@ -1,0 +1,195 @@
+diff --git a/sys/libnh/libnhmain.c b/sys/libnh/libnhmain.c
+index f974bc4..6fd257c 100644
+--- a/sys/libnh/libnhmain.c
++++ b/sys/libnh/libnhmain.c
+@@ -51,7 +51,9 @@ extern void init_linux_cons(void);
+ 
+ static void wd_message(void);
+ static struct passwd *get_unix_pw(void);
+-ATTRNORETURN static void opt_terminate(void) NORETURN;
++#if 0
++/* opt_terminate removed (unused in libnh) */
++#endif
+ 
+ #ifdef __EMSCRIPTEN__
+ /* if WebAssembly, export this API and don't optimize it out */
+@@ -772,6 +774,7 @@ sys_random_seed(void)
+ /* for command-line options that perform some immediate action and then
+    terminate the program without starting play, like 'nethack --version'
+    or 'nethack -s Zelda'; do some cleanup before that termination */
++#if 0
+ ATTRNORETURN static void
+ opt_terminate(void)
+ {
+@@ -780,9 +783,11 @@ opt_terminate(void)
+     nh_terminate(EXIT_SUCCESS);
+     /*NOTREACHED*/
+ }
++#endif
+ 
+ /* show the sysconf file name, playground directory, run-time configuration
+    file name, dumplog file name if applicable, and some other things */
++#if 0 /* duplicate of src/earlyarg.c */
+ ATTRNORETURN void
+ after_opt_showpaths(const char *dir)
+ {
+@@ -794,6 +799,7 @@ after_opt_showpaths(const char *dir)
+     opt_terminate();
+     /*NOTREACHED*/
+ }
++#endif
+ 
+ #ifdef __EMSCRIPTEN__
+ /***
+@@ -1279,3 +1285,18 @@ EM_JS(void, create_global, (char *name_str, void *ptr, char *type_str), {
+ #endif
+ 
+ /*libnhmain.c*/
++
++/* web build: no system uuid source */
++void
++get_nhuuid(void)
++{
++}
++
++void
++free_nhuuid(void)
++{
++    int i;
++
++    for (i = 0; i < SIZE(svn.nhuuid); i++)
++        svn.nhuuid[i] = 0;
++}
+diff --git a/sys/libnh/sysconf b/sys/libnh/sysconf
+index af871c1..59affc5 100644
+--- a/sys/libnh/sysconf
++++ b/sys/libnh/sysconf
+@@ -152,6 +152,6 @@ PANICTRACE_LIBC=0
+ # option settings via NETHACKOPTIONS in their environment or via
+ # ~/.nethackrc run-time configuration file.
+ #OPTIONS=!autopickup,fruit:tomato,symset:DECgraphics
+-OPTIONS=perm_invent
++#OPTIONS=perm_invent
+ 
+ #eof
+diff --git a/sys/unix/hints/include/cross-pre2.500 b/sys/unix/hints/include/cross-pre2.500
+index ddc3ba7..ca31cd4 100644
+--- a/sys/unix/hints/include/cross-pre2.500
++++ b/sys/unix/hints/include/cross-pre2.500
+@@ -273,22 +273,23 @@ WASM_DATA_DIR = $(TARGETPFX)wasm-data
+ WASM_TARGET = $(TARGETPFX)nethack.js
+ EMCC_LFLAGS =
+ #EMCC_LFLAGS += -s SINGLE_FILE=1
+-EMCC_LFLAGS += -DHACKDIR=\"$(HACKDIR)\"
++EMCC_LFLAGS += -DHACKDIR=\"/nethack\"
+ EMCC_LFLAGS += -s WASM=1
+ EMCC_LFLAGS += -s ALLOW_TABLE_GROWTH
+ EMCC_LFLAGS += -s ASYNCIFY -s ASYNCIFY_IMPORTS='["local_callback"]'
+ EMCC_LFLAGS += -O3
+ EMCC_LFLAGS += -s MODULARIZE
+-EMCC_LFLAGS += -s EXPORTED_FUNCTIONS='["_main", "_shim_graphics_set_callback", "_repopulate_perminvent", "_malloc"]'
++EMCC_LFLAGS += -s EXPORTED_FUNCTIONS='["_main", "_shim_graphics_set_callback", "_repopulate_perminvent", "_malloc", "_free", "_shim_gi_glyph", "_shim_gi_ttychar", "_shim_gi_color", "_shim_gi_flags", "_shim_sizeof_anything", "_shim_sizeof_menu_item", "_shim_off_menu_count", "_shim_off_menu_itemflags", "_shim_sizeof_long", "_shim_extcmd_txt", "_shim_extcmd_desc", "_shim_extcmd_flags"]'
++EMCC_LFLAGS += -s ALLOW_MEMORY_GROWTH=1 -s INITIAL_MEMORY=67108864 -s STACK_SIZE=1048576 -s ASYNCIFY_STACK_SIZE=1048576
++EMCC_LFLAGS += -s EXPORT_NAME=NetHackModule -s ENVIRONMENT=web,node -s EXIT_RUNTIME=1
+ EMCC_LFLAGS += -s EXPORTED_RUNTIME_METHODS='["cwrap", "ccall", "addFunction", \
+ 			"removeFunction", "UTF8ToString", "stringToUTF8", "getValue", \
+-			"setValue", "ENV", "FS", "IDBFS"]'
++			"setValue", "ENV", "FS", "IDBFS", "addRunDependency", "removeRunDependency"]'
+ EMCC_LFLAGS += -s ERROR_ON_UNDEFINED_SYMBOLS=0
+-EMCC_LFLAGS += -s EXPORT_ES6=1
+ EMCC_LFLAGS += -lidbfs.js
+ # XXX: the "@/" at the end of "--embed-file" tells emscripten to embed the files
+ # in the root directory, otherwise they will end up in the $(WASM_DATA_DIR) path
+-EMCC_LFLAGS += --embed-file $(WASM_DATA_DIR)@/
++EMCC_LFLAGS += --embed-file $(WASM_DATA_DIR)@/nethack
+ # For a list of EMCC settings:
+ # https://github.com/emscripten-core/emscripten/blob/master/src/settings.js
+ #
+@@ -329,12 +330,12 @@ WASM_CFLAGS += -Wshadow
+ # WASM_CFLAGS += -Werror
+ # Nethack C flags
+ WASM_CFLAGS += $(WINCFLAGS)   #WINCFLAGS set from multiw-2.500
+-WASM_CFLAGS += -DSYSCF -DSYSCF_FILE=\"/sysconf\" -DSECURE
++WASM_CFLAGS += -DSYSCF -DSYSCF_FILE=\"/nethack/sysconf\" -DSECURE
+ #WASM_CFLAGS += -g -I../include -DNOTPARMDECL
+ WASM_CFLAGS += -I../include -DNOTPARMDECL
+ # NetHack sources control
+ WASM_CFLAGS += -DDLB
+-WASM_CFLAGS += -DHACKDIR=\"$(HACKDIR)\"
++WASM_CFLAGS += -DHACKDIR=\"/nethack\"
+ WASM_CFLAGS += -DDEFAULT_WINDOW_SYS=\"shim\" \
+ #override TARGET_CFLAGS += -DGREPPATH=\"/usr/bin/grep\"
+ WASM_CFLAGS += -DNOMAIL
+diff --git a/win/shim/winshim.c b/win/shim/winshim.c
+index a18534d..98fa066 100644
+--- a/win/shim/winshim.c
++++ b/win/shim/winshim.c
+@@ -203,6 +203,25 @@ DECLCB(win_request_info *, shim_ctrl_nhwindow,
+     A2P window, A2P request, P2V wri)
+ #endif
+ 
++
++#ifdef __EMSCRIPTEN__
++/* ---- accessors for the JS front end (struct layout lives on the C side) ---- */
++#include <stddef.h>
++#include "func_tab.h"
++EMSCRIPTEN_KEEPALIVE int shim_gi_glyph(const glyph_info *gli) { return gli ? gli->glyph : -1; }
++EMSCRIPTEN_KEEPALIVE int shim_gi_ttychar(const glyph_info *gli) { return gli ? gli->ttychar : ' '; }
++EMSCRIPTEN_KEEPALIVE int shim_gi_color(const glyph_info *gli) { return gli ? gli->gm.sym.color : NO_COLOR; }
++EMSCRIPTEN_KEEPALIVE unsigned shim_gi_flags(const glyph_info *gli) { return gli ? gli->gm.glyphflags : 0; }
++EMSCRIPTEN_KEEPALIVE int shim_sizeof_anything(void) { return (int) sizeof(anything); }
++EMSCRIPTEN_KEEPALIVE int shim_sizeof_menu_item(void) { return (int) sizeof(menu_item); }
++EMSCRIPTEN_KEEPALIVE int shim_off_menu_count(void) { return (int) offsetof(menu_item, count); }
++EMSCRIPTEN_KEEPALIVE int shim_off_menu_itemflags(void) { return (int) offsetof(menu_item, itemflags); }
++EMSCRIPTEN_KEEPALIVE int shim_sizeof_long(void) { return (int) sizeof(long); }
++EMSCRIPTEN_KEEPALIVE const char *shim_extcmd_txt(int i) { return extcmdlist[i].ef_txt; }
++EMSCRIPTEN_KEEPALIVE const char *shim_extcmd_desc(int i) { return extcmdlist[i].ef_desc ? extcmdlist[i].ef_desc : ""; }
++EMSCRIPTEN_KEEPALIVE unsigned shim_extcmd_flags(int i) { return extcmdlist[i].flags; }
++#endif
++
+ /* Interface definition used in windows.c */
+ struct window_procs shim_procs = {
+     WPID(shim),
+@@ -224,7 +243,7 @@ struct window_procs shim_procs = {
+     shim_exit_nhwindows, shim_suspend_nhwindows, shim_resume_nhwindows,
+     shim_create_nhwindow, shim_clear_nhwindow, shim_display_nhwindow,
+     shim_destroy_nhwindow, shim_curs, shim_putstr, genl_putmixed,
+-    shim_display_file, shim_start_menu, shim_add_menu, shim_end_menu,
++    genl_display_file, shim_start_menu, shim_add_menu, shim_end_menu,
+     shim_select_menu, shim_message_menu, shim_mark_synch,
+     shim_wait_synch,
+ #ifdef CLIPPING
+@@ -292,16 +311,24 @@ EM_JS(void, local_callback, (const char *cb_name, const char *shim_name, void *r
+ 
+         // do the callback
+         let userCallback = globalThis[cbName];
+-        userCallback.call(this, name, ... jsArgs).then((retVal) => {
+-            // save the return value
+-            setPointerValue(name, ret_ptr, retType, retVal);
++        let cbResult = userCallback.call(this, name, ... jsArgs);
++        if (cbResult && typeof cbResult.then === "function") {
++            cbResult.then((retVal) => {
++                // save the return value
++                setPointerValue(name, ret_ptr, retType, retVal);
++                reentryMutexUnlock();
++                try {
++                    wakeUp();
++                } catch (e) {
++
++                }
++            });
++        } else {
++            /* synchronous result: wake immediately so Asyncify skips the unwind */
++            setPointerValue(name, ret_ptr, retType, cbResult);
+             reentryMutexUnlock();
+-            try {
+-                wakeUp();
+-            } catch (e) {
+-                
+-            }
+-        });
++            wakeUp();
++        }
+ 
+         function getArg(name, ptr, type) {
+             return (type === "p") ? getValue(ptr, "*") : getPointerValue(name, getValue(ptr, "*"), type);
