@@ -74,6 +74,8 @@ button { font: inherit; color: inherit; }
 button, .tap { touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 :focus-visible { outline: 2px solid var(--torch); outline-offset: 2px; }
 .app { height: 100%; position: relative; }
+/* while playing, the areas behind the iOS status bar and home indicator match the panels */
+html.in-game, html.in-game body { background: var(--slab); }
 
 /* ---------- title ---------- */
 .title { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
@@ -132,6 +134,8 @@ input:focus { border-color: var(--torch); outline: none; }
 .st-row > * { flex: none; }
 #st-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--f-ui); font-weight: 700; font-size: 0.92rem; }
 .st-dim { color: var(--dust); }
+.status.empty .st-row + .st-row { visibility: hidden; }
+.status.empty #st-name { color: var(--dust); font-weight: 500; }
 .st-gold { color: #f3d250; }
 .hp { display: flex; align-items: center; gap: 6px; }
 .hpbar { width: 64px; height: 7px; border-radius: 4px; background: var(--slab-2); border: 1px solid var(--seam); overflow: hidden; }
@@ -143,6 +147,8 @@ input:focus { border-color: var(--torch); outline: none; }
 .chip.s3 { color: #fff; background: #8f2525; }
 .msgs { grid-area: msgs; height: calc(3 * 1.32em + 10px); padding: 5px 12px; font: 0.8rem/1.32 var(--f-mono); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(var(--cave), var(--cave)); border-bottom: 1px solid var(--seam); cursor: pointer; }
 .msgs p { margin: 0; overflow-wrap: anywhere; }
+.msgs { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px); mask-image: linear-gradient(to bottom, transparent 0, #000 14px); }
+.msgs .rep { color: var(--torch); font-weight: 700; margin-left: 0.5ch; }
 .msgs p.old { color: var(--dust); opacity: 0.7; }
 .msgs p.b { font-weight: 700; }
 .mapwrap { grid-area: map; position: relative; overflow: hidden; touch-action: none; background: var(--cave); }
@@ -178,7 +184,7 @@ input:focus { border-color: var(--torch); outline: none; }
 .kbd button.on { background: #3a2c14; border-color: var(--torch); color: var(--torch); }
 
 /* ---------- sheet ---------- */
-.sheet { position: fixed; inset: 0; z-index: 20; background: rgba(4, 6, 9, 0.6); display: flex; align-items: flex-end; justify-content: center; padding-top: env(safe-area-inset-top, 0px); }
+.sheet { position: fixed; inset: 0; bottom: var(--kb, 0px); z-index: 20; background: rgba(4, 6, 9, 0.6); display: flex; align-items: flex-end; justify-content: center; padding-top: env(safe-area-inset-top, 0px); }
 .sheet-card { width: 100%; max-width: 680px; min-width: 0; max-height: 88%; display: flex; flex-direction: column; background: var(--slab); border: 1px solid var(--seam); border-bottom: 0; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
 .sheet-head { padding: 14px 16px 8px; display: flex; flex-direction: column; gap: 8px; }
 .sheet-head h2 { margin: 0; font: 700 1rem/1.3 var(--f-ui); text-wrap: balance; overflow-wrap: anywhere; }
@@ -197,6 +203,9 @@ input:focus { border-color: var(--torch); outline: none; }
 .mi[aria-pressed="true"] { background: #2a2014; border-color: #5a4320; }
 .mi[aria-pressed="true"] .acc { background: var(--torch); color: var(--torch-ink); border-color: var(--torch); }
 .textwin { max-width: 100%; margin: 0; font: 0.76rem/1.38 var(--f-mono); white-space: pre; overflow-x: auto; color: var(--bone); padding: 4px 6px 8px; }
+.prose { padding: 6px 6px 10px; display: flex; flex-direction: column; gap: 0.75em; }
+.prose p { margin: 0; font: 0.84rem/1.5 var(--f-mono); color: var(--bone); max-width: 62ch; text-wrap: pretty; }
+.prose p.ind { padding-left: 1.2em; border-left: 2px solid var(--seam); color: #c9cfd8; }
 .hist p { margin: 0; padding: 4px 6px; font: 0.82rem/1.35 var(--f-mono); border-bottom: 1px solid #1f252e; overflow-wrap: anywhere; }
 .chiprow { display: flex; gap: 6px; flex-wrap: wrap; }
 .chipbtn { border: 1px solid var(--seam); background: var(--slab-2); border-radius: 18px; padding: 7px 12px; font: 500 0.85rem/1 var(--f-mono); cursor: pointer; }
@@ -212,16 +221,22 @@ input:focus { border-color: var(--torch); outline: none; }
 
 @media (orientation: landscape) and (max-height: 540px) {
   .game {
-    grid-template-columns: minmax(0, 1fr) minmax(330px, 46%);
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-    grid-template-areas: "map status" "map msgs" "map prompt" "map controls";
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 50%);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "map status" "map msgs" "map controls";
   }
   .status, .msgs, .prompt, .controls, .kbd { border-left: 1px solid var(--seam); }
-  .prompt { align-self: end; border-top: 1px solid #4a3818; }
-  .msgs { height: calc(3 * 1.32em + 10px); }
-  .dpad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
-  .cmdgrid { grid-auto-rows: 46px; }
+  .msgs { height: auto; min-height: 0; }
+  /* the question takes the message log's place instead of squeezing the controls */
+  .prompt { grid-area: msgs; align-self: end; z-index: 2; max-height: 100%; overflow-y: auto; border-top: 1px solid #4a3818; }
+  .prompt-b { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .prompt-b::-webkit-scrollbar { display: none; }
+  .pbtn { flex: none; min-height: 34px; }
+  .dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+  .cmdgrid { grid-auto-rows: 44px; }
   .kbd button { height: 34px; }
+  /* notch side matches the map, home-indicator side matches the panels above it */
+  html.in-game, html.in-game body { background: linear-gradient(to right, var(--cave) var(--split, 50%), var(--slab) var(--split, 50%)); }
 }
 @media (max-width: 360px) {
   .dpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
@@ -928,8 +943,8 @@ else if (typeof define === 'function' && define['amd'])
   }
 
   // ---------------- map view ----------------
-  const ZOOMS = ["fit", 12, 16];
-  const ZOOM_LABEL = ["всё", "1×", "1.3×"];
+  const ZOOMS = [9, 12, 16];
+  const ZOOM_LABEL = ["A−", "A", "A+"];
   const mv = { cv: $("map"), ctx: null, dpr: 1, cw: 10, chh: 18, fontPx: 16, adv: 0.6, vw: 0, vh: 0,
     camX: 0, camY: 0, panX: 0, panY: 0, heroKey: "" };
   mv.ctx = mv.cv.getContext("2d");
@@ -959,6 +974,7 @@ else if (typeof define === 'function' && define['amd'])
     }
     mv.fontPx = Math.min(mv.chh * 0.92, mv.cw / mv.adv);
     $("btn-zoom").textContent = ZOOM_LABEL[prefs.zoom] || "1×";
+    document.documentElement.style.setProperty("--split", Math.round(r.right) + "px");
     drawMap();
   }
 
@@ -1026,8 +1042,10 @@ else if (typeof define === 'function' && define['amd'])
   let engine = null;
   let sheetState = null;
   function canSend() { return engine && !engine.exited && !sheetState; }
+  let lastCmd = "";
   function send(k) {
     if (!canSend()) return;
+    lastCmd = typeof k === "string" ? k : String.fromCharCode(k);
     if (typeof k === "string") { for (const ch of k) engine.pushKey(ch.charCodeAt(0)); }
     else engine.pushKey(k);
   }
@@ -1050,7 +1068,9 @@ else if (typeof define === 'function' && define['amd'])
   function goldText() { return st("BL_GOLD").replace(/\\G[0-9A-Fa-f]{8}:?/g, "").trim(); }
   function renderStatus() {
     if (!engine) return;
-    $("st-name").textContent = st("BL_TITLE") || "—";
+    const ready = !!st("BL_HP");
+    $("status").classList.toggle("empty", !ready);
+    $("st-name").textContent = st("BL_TITLE") || "Создание героя…";
     $("st-dl").textContent = st("BL_LEVELDESC").replace(/:\s*/, " ");
     const g = goldText();
     $("st-gold").textContent = g ? "$" + g : "";
@@ -1066,7 +1086,7 @@ else if (typeof define === 'function' && define['amd'])
     $("st-pw").textContent = pw ? "Pw " + pw + "/" + pwm : "";
     $("st-ac").textContent = st("BL_AC") ? "AC " + st("BL_AC") : "";
     const hd = st("BL_HD");
-    $("st-xl").textContent = hd ? "HD " + hd : st("BL_XP") ? "Ур " + st("BL_XP") : "";
+    $("st-xl").textContent = hd ? "HD " + hd : st("BL_XP") ? "Xp " + st("BL_XP") : "";
     const chips = $("st-chips");
     chips.replaceChildren();
     const add = (txt, sev) => chips.append(el("span", "chip s" + sev, txt));
@@ -1083,7 +1103,18 @@ else if (typeof define === 'function' && define['amd'])
   const MSG_KEEP = 40;
   function onMessage(m) {
     const box = $("msgs");
+    const last = box.lastElementChild;
+    if (last && last.dataset.text === m.text) {
+      const n = (+last.dataset.n || 1) + 1;
+      last.dataset.n = n;
+      last.classList.remove("old");
+      let rep = last.querySelector(".rep");
+      if (!rep) { rep = el("span", "rep"); last.append(rep); }
+      rep.textContent = "×" + n;
+      return;
+    }
     const p = el("p", m.attr ? "b" : "", m.text);
+    p.dataset.text = m.text;
     box.append(p);
     while (box.childElementCount > MSG_KEEP) box.firstElementChild.remove();
   }
@@ -1195,10 +1226,26 @@ else if (typeof define === 'function' && define['amd'])
     return new Promise((resolve) => {
       const pre = el("pre", "textwin");
       pre.textContent = lines.map((l) => l.text).join("\n");
+      // keep columns only when the widest line fits the screen; otherwise wrap it like prose
+      const widest = lines.reduce((w, l) => Math.max(w, (l.text || "").replace(/\s+$/, "").length), 0);
+      const room = Math.min(window.innerWidth, 680) - 40;
+      const art = lines.some((l) => /[|_\\\/]{3,}|-{4,}/.test(l.text || ""));
+      let view = pre;
+      if (widest * 0.6 * 12 > room && !art) {
+        // NetHack hard-wraps prose at ~70 columns; join each paragraph so it wraps to the phone instead
+        view = el("div", "prose");
+        let para = null;
+        for (const l of lines) {
+          const t = l.text || "";
+          if (!t.trim()) { para = null; continue; }
+          if (!para) { para = el("p", /^\s{2,}/.test(t) ? "ind" : ""); para.textContent = t.trim(); view.append(para); }
+          else para.textContent += " " + t.trim();
+        }
+      } else if (widest * 0.6 * 12 > room) pre.style.fontSize = Math.max(8, room / (widest * 0.6)) + "px";
       const done = () => { closeSheet(true); resolve(); };
       openSheet({
         title: "",
-        body: pre,
+        body: view,
         buttons: [{ label: "Продолжить", cls: "primary", onClick: done }],
         onKey: (k) => { if (k === 13 || k === 27 || k === 32) done(); },
         onDismiss: () => resolve(),
@@ -1306,7 +1353,7 @@ else if (typeof define === 'function' && define['amd'])
         footer.push({ label: "Готово", cls: "primary", onClick: () => finish(result()), ref: (x) => { doneBtn = x; refreshDone(); } });
       }
       openSheet({
-        title: spec.prompt || (how === "one" ? "Выберите" : how === "any" ? "Отметьте нужное" : ""),
+        title: spec.prompt || (how === "one" && lastCmd === "i" ? "Инвентарь" : how === "one" ? "Выберите" : how === "any" ? "Отметьте нужное" : ""),
         body: list,
         buttons: footer,
         onDismiss: () => resolve(how === "none" ? [] : null),
@@ -1694,6 +1741,9 @@ else if (typeof define === 'function' && define['amd'])
     $("title").hidden = true;
     $("ending").hidden = true;
     $("game").hidden = false;
+    document.documentElement.classList.add("in-game");
+    $("status").classList.add("empty");
+    $("st-name").textContent = "Создание героя…";
     hidePrompt();
     showKeyboard(false);
     layoutMap();
@@ -1805,6 +1855,7 @@ else if (typeof define === 'function' && define['amd'])
     else { note.className = "note"; note.textContent = "Роль, расу и пол можно выбрать или доверить случаю."; }
   }
   function showTitle() {
+    document.documentElement.classList.remove("in-game");
     $("ending").hidden = true;
     $("game").hidden = true;
     $("title").hidden = false;
@@ -1867,6 +1918,16 @@ else if (typeof define === 'function' && define['amd'])
     if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
   }
   fitViewport();
+  if (window.visualViewport) {
+    const liftForKeyboard = () => {
+      const vv = window.visualViewport;
+      const kb = window.innerHeight - vv.height - vv.offsetTop;
+      document.documentElement.style.setProperty("--kb", kb > 120 ? kb + "px" : "0px");
+      if (kb > 120 && (window.scrollY || window.scrollX)) window.scrollTo(0, 0);
+    };
+    visualViewport.addEventListener("resize", liftForKeyboard);
+    visualViewport.addEventListener("scroll", liftForKeyboard);
+  }
   window.addEventListener("orientationchange", () => setTimeout(() => { fitViewport(); if (!$("game").hidden) layoutMap(); }, 250));
   window.addEventListener("scroll", () => { if (window.scrollY || window.scrollX) window.scrollTo(0, 0); });
 

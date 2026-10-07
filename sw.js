@@ -2,7 +2,7 @@
    Cache-first for everything in the bundle, so launches never wait on the network.
    A new build gets a new VERSION; the browser notices the changed sw.js on the next
    online launch, installs it in the background and the following launch uses it. */
-const VERSION = "nhpocket-c565c7fc1540";
+const VERSION = "nhpocket-500724f43524";
 const ASSETS = [
   "./",
   "index.html",
